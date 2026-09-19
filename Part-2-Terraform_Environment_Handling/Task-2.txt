@@ -1,1 +1,26 @@
+Create Terraform structure for at least two environments:
 
+infra/
+  modules/
+    network/
+    ecs/
+    rds/
+  envs/
+    dev/
+    prod/
+
+Each environment should have separate:
+
+● variables
+● tfvars
+● backend state configuration
+● resource sizing
+● RDS backup retention
+● deletion protection setting
+
+
+Example:
+
+dev  → smaller instance, shorter backup retention, deletion protection false
+
+prod → larger instance, longer backup retention, deletion protection true
