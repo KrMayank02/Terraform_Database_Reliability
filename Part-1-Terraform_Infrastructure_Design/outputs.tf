@@ -1,5 +1,3 @@
-# outputs.tf
-
 output "alb_dns_name" {
   description = "Public URL of ALB - Application Load Balancer"
   value       = aws_lb.main.dns_name
