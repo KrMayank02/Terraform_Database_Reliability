@@ -1,0 +1,10 @@
+Create the following scripts:
+
+scripts/backup.sh
+scripts/restore.sh
+
+Backup script should create a timestamped database dump.
+
+Restore script should restore the backup into a fresh local database.
+
+README.md should explain how to verify that restore worked successfully.
