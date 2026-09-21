@@ -14,4 +14,6 @@ WHERE city = 'delhi'
   AND created_at >= NOW() - INTERVAL '30 days'
 GROUP BY org_id, status;
 
-Candidate should add the required index or indexes and briefly explain the choice in README.md.
+Candidate should add the required index or indexes and briefly explain the choice in README.md
+
+
