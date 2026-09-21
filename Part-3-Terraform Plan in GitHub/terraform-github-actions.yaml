@@ -1,0 +1,167 @@
+name: "Terraform PR Checks"
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - "infra/**"
+      - "*.tf"
+
+permissions:
+  contents: read
+  pull-requests: write # Required to post/update PR comments
+
+jobs:
+  terraform-pr:
+    name: "Terraform Lint, Validate & Plan"
+    runs-on: ubuntu-latest
+
+
+    steps:
+      # ------------------------------------------------------------------------
+      # 1. CHECKOUT REPOSITORY
+      # ------------------------------------------------------------------------
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------------
+      # 2. SETUP TERRAFORM CLI
+      # ------------------------------------------------------------------------
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      # ------------------------------------------------------------------------
+      # 3. TERRAFORM FORMAT CHECK
+      # ------------------------------------------------------------------------
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      # ------------------------------------------------------------------------
+      # 4. TERRAFORM INIT
+      # ------------------------------------------------------------------------
+      - name: Terraform Init
+        id: init
+        run: terraform init -backend=false # Plan-only mode without remote backend access requirement
+
+      # ------------------------------------------------------------------------
+      # 5. TERRAFORM VALIDATE
+      # ------------------------------------------------------------------------
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      # ------------------------------------------------------------------------
+      # 6. TERRAFORM PLAN
+      # ------------------------------------------------------------------------
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -no-color -input=false -out=tfplan.binary
+          terraform show -no-color tfplan.binary > tfplan.txt
+        continue-on-error: true
+
+      # ------------------------------------------------------------------------
+      # 7. UPLOAD PLAN ARTIFACT
+      # ------------------------------------------------------------------------
+      - name: Upload Terraform Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-${{ github.event.pull_request.number }}
+          path: |
+            tfplan.binary
+            tfplan.txt
+          retention-days: 7
+
+      # ------------------------------------------------------------------------
+      # 8. POST / UPDATE PR COMMENT
+      # ------------------------------------------------------------------------
+      - name: Post Plan to PR Comment
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+
+            // Read plan output file generated in step 6
+            let planOutput = "";
+            try {
+              planOutput = fs.readFileSync('tfplan.txt', 'utf8');
+            } catch (err) {
+              planOutput = "Error reading plan output file.";
+            }
+
+            // Truncate output if it exceeds GitHub comment body limits (65,536 chars)
+            const maxLen = 60000;
+            if (planOutput.length > maxLen) {
+              planOutput = planOutput.substring(0, maxLen) + "\n... [Output Truncated]";
+            }
+
+            // Status indicators
+            const fmtStatus = "${{ steps.fmt.outcome }}" === "success" ? "✅ Passed" : "❌ Failed (run `terraform fmt`)";
+            const initStatus = "${{ steps.init.outcome }}" === "success" ? "✅ Passed" : "❌ Failed";
+            const validateStatus = "${{ steps.validate.outcome }}" === "success" ? "✅ Passed" : "❌ Failed";
+            const planStatus = "${{ steps.plan.outcome }}" === "success" ? "✅ Passed" : "❌ Failed";
+
+            const commentHeader = "## 🤖 Terraform Pull Request Inspection";
+            const body = `${commentHeader}
+
+            ### Checks Summary
+            | Check | Status |
+            | :--- | :--- |
+            | 🖌 **Format** | ${fmtStatus} |
+            | ⚙️ **Initialization** | ${initStatus} |
+            | 🤖 **Validation** | ${validateStatus} |
+            | 📋 **Plan** | ${planStatus} |
+
+            <details><summary>Show Terraform Plan Output</summary>
+
+            \`\`\`hcl
+            ${planOutput}
+            \`\`\`
+
+            </details>
+
+            *Pushed by: @${{ github.actor }} in commit \`${{ github.sha }}\`*`;
+
+            // Search for existing sticky comment to update instead of spamming new comments
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existingComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes(commentHeader)
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+      # ------------------------------------------------------------------------
+      # 9. FAIL WORKFLOW IF ANY STEP FAILED
+      # ------------------------------------------------------------------------
+      - name: Check Final Status
+        if: steps.fmt.outcome != 'success' || steps.init.outcome != 'success' || steps.validate.outcome != 'success' || steps.plan.outcome != 'success'
+        run: |
+          echo "One or more Terraform pipeline steps failed!"
+          exit 1
