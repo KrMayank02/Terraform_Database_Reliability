@@ -1,0 +1,18 @@
+Create a GitHub Actions workflow for Terraform.
+
+The workflow should run on Pull Requests and perform:
+
+● terraform fmt
+● terraform init
+● terraform validate
+● terraform plan
+
+The Terraform plan should be shared in the Pull Request as one of the following:
+
+● PR comment
+● workflow artifact
+● clearly visible workflow output
+
+
+Actual AWS deployment is not required. Candidates may use plan-only configuration where needed, but the Terraform code should be realistic and production-oriented.
+
