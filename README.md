@@ -40,6 +40,11 @@ STEPS:
 
 ---------------------------------------------------------------------------------------------------------------------------------
 
+<img width="652" height="320" alt="image" src="https://github.com/user-attachments/assets/a3bf6d4a-ace9-4ad8-8d5c-bc2db273b8b7" />
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+
 <img width="1771" height="1011" alt="Screenshot_Dev_Environment" src="https://github.com/user-attachments/assets/b83b8303-282f-436a-9df1-64642a4940fb" />
 
 ---------------------------------------------------------------------------------------------------------------------------------
@@ -48,6 +53,35 @@ STEPS:
 
 ----------------------------------------------------------------------------------------------------------------------------------
 
+
+# Part 3: Terraform Plan in GitHub
+
+STEPS:
+
+- Designed a GitHub Actions workflow for Terraform Pull Requests.
+
+- It executes terraform fmt, terraform init, terraform validate, and terraform plan. The formatted plan output is posted directly back to the Pull Request as an auto-updating comment.
+
+- Workflow file attached in repository.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+# Part 4: Local Database Test
+
+STEPS:
+
+- Created a setup/structure using Docker Compose with PostgreSQL. It includes an initialization script that automatically creates the hotel_bookings and booking_events tables when the database starts up for the first time.
+- init.sql and docker-compose.yml
+
+<img width="360" height="111" alt="image" src="https://github.com/user-attachments/assets/ba61d2aa-8872-4c14-b141-770e44a84eaa" /> 
+
+Executed below commands:
+
+- docker compose up -d
+- docker compose ps
+- -docker exec -it local_hotel_db psql -U postgres -d hotel_db
+- \dt
+- docker compose down
 
 
 
