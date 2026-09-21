@@ -1,0 +1,17 @@
+Add seed data for at least:
+
+● 100 hotel bookings
+● multiple cities
+● multiple organizations
+● multiple booking statuses
+● booking events for some bookings
+
+Optimize the following query:
+
+SELECT org_id, status, COUNT(*), SUM(amount)
+FROM hotel_bookings
+WHERE city = 'delhi'
+  AND created_at >= NOW() - INTERVAL '30 days'
+GROUP BY org_id, status;
+
+Candidate should add the required index or indexes and briefly explain the choice in README.md.
