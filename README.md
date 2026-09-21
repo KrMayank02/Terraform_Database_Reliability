@@ -104,6 +104,34 @@ STEPS:
   AND created_at >= NOW() - INTERVAL '30 days'
   GROUP BY org_id, status;
 
+- The Indexing Choice: To optimize this query, we created the following Composite Covering Index:
+
+  CREATE INDEX idx_hotel_bookings_city_created_org_status_amount
+  ON hotel_bookings (city, created_at)
+  INCLUDE (org_id, status, amount);
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+# Part 6: Backup and Restore
+
+STEPS:
+
+- Created database backup and restore scripts.
+- scripts/backup.sh
+- scripts/restore.sh
+- Make sure to give execution permissions: chmod +x scripts/backup.sh
+- Make sure to give execution permissions: chmod +x scripts/restore.sh
+- Run the backup script to generate a compressed, timestamped dump inside the ./backups/ directory:
+  ./scripts/backup.sh
+
+- To test restoring, wipe the current database volume to start fresh, and then run restore.sh
+- Wipe existing container & data volume:  docker compose down -v
+- Start a fresh, empty container:  docker compose up -d
+- ./scripts/restore.sh backups/hotel_db_backup_20260921_120000.sql.gz
+- Scripts are kept at Github repository location.
+
+------------------------------------------------------------------------------------------------------------------------------------
+
 
 
 
