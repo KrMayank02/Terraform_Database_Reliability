@@ -79,9 +79,30 @@ Executed below commands:
 
 - docker compose up -d
 - docker compose ps
-- -docker exec -it local_hotel_db psql -U postgres -d hotel_db
+- docker exec -it local_hotel_db psql -U postgres -d hotel_db
 - \dt
 - docker compose down
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+# Part 5: Seed Data and Indexing
+
+STEPS:
+
+- Updated initialization script (init.sql) with seed data generation for 100+ bookings and events, followed by an analysis and optimization of the target aggregation query using a composite index.
+- Updated init.sql (Schema, Seed Data & Indexes)
+- Query Optimization
+- This project sets up a local PostgreSQL database using Docker Compose, populates schema and mock seed data, and provides an optimized indexing strategy for analytical aggregation queries.
+
+- Start the container:   docker compose up -d
+- docker exec -it local_hotel_db psql -U postgres -d hotel_db
+- Query Optimization Analysis "Target Query":
+  
+  SELECT org_id, status, COUNT(*), SUM(amount)
+  FROM hotel_bookings
+  WHERE city = 'delhi'
+  AND created_at >= NOW() - INTERVAL '30 days'
+  GROUP BY org_id, status;
 
 
 
